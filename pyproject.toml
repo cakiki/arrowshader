@@ -1,0 +1,28 @@
+[build-system]
+requires = ["hatchling >= 1.27"]
+build-backend = "hatchling.build"
+
+[project]
+name = "arrowshader"
+version = "0.1.0"
+requires-python = ">=3.10"
+maintainers = [
+  {name = "Christopher Akiki", email = "christopher.akiki@gmail.com"}
+]
+description = "Visualize large arrow tables"
+readme = "README.md"
+license = "BSD-3-Clause"
+dependencies = [
+    "pyarrow",
+    "numpy",
+    "matplotlib",
+]
+
+[project.optional-dependencies]
+dev = ["pytest", "ruff"]
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/arrowshader"]
+
+[tool.ruff]
+line-length = 120
