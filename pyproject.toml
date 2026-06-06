@@ -19,7 +19,12 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-dev = ["pytest", "ruff"]
+dev = [
+"pytest",
+"ruff",
+"datasets",
+"polars"
+]
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/arrowshader"]
