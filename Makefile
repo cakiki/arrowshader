@@ -10,4 +10,4 @@ format:
 	ruff format src/ tests/
 
 test:
-	pytest tests/
+	pytest tests/ -v
