@@ -28,7 +28,7 @@ def eq_hist(data, mask=None, nbins=256 * 256):
     cdf = hist.cumsum()
     cdf = cdf / float(cdf[-1])
     out = np.interp(data, bin_centers, cdf).reshape(data.shape)
-    return out if mask is None else np.where(mask, np.nan, out), discrete_levels
+    return out if mask is None else (np.where(mask, np.nan, out), discrete_levels)
 
 
 _interpolate_lookup = {
