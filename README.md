@@ -8,5 +8,6 @@ import arrowshader as ash
 c = ash.Canvas(width=600, height=600, x_range=..., y_range=...)
 c.plot(your_dataset, "x_col_name", "y_col_name")
 ```
-
-![Foursquare OS Places — 108M points](docs/fsq_europe_mena.png)
+<p align="center">
+  <img src="docs/fsq_europe_mena.png" width="100%">
+</p>
