@@ -15,7 +15,8 @@ license = "BSD-3-Clause"
 dependencies = [
     "pyarrow",
     "numpy",
-    "matplotlib",
+    "colorcet",
+    "pillow",
 ]
 
 [project.optional-dependencies]

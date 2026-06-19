@@ -17,7 +17,14 @@ def _scatter(result, width, height, value_column):
     grid[bins // width, bins % width] = values
     return grid
 
-
+def _apply_cmap(data, cmap):
+    colors = np.array([tuple(int(h[i:i+2], 16) for i in (1, 3, 5)) for h in cmap])
+    span = np.linspace(0, 1, len(colors))
+    r = np.nan_to_num(np.interp(data, span, colors[:, 0])).astype(np.uint8)
+    g = np.nan_to_num(np.interp(data, span, colors[:, 1])).astype(np.uint8)
+    b = np.nan_to_num(np.interp(data, span, colors[:, 2])).astype(np.uint8)
+    a = np.where(np.isnan(data), 0, 255).astype(np.uint8)
+    return np.flipud(np.dstack([r, g, b, a]))
 class Canvas:
     def __init__(self, width=600, height=600, x_range=None, y_range=None, backend="acero"):
         if x_range is None or y_range is None:
@@ -39,25 +46,18 @@ class Canvas:
         value_col = [c for c in result.column_names if c != "bin_id"][0]
         return _scatter(result, self.width, self.height, value_col)
 
-    def plot(
-        self, source, x, y, agg=None, how="eq_hist", cmap="hot", axis=False, background="black", ax=None, **kwargs
-    ):
-        import matplotlib.pyplot as plt
-
+    def plot(self, source, x, y, agg=None, how="eq_hist", cmap=None, background="black"):
+        from PIL import Image
+        if cmap is None:
+            import colorcet
+            cmap = colorcet.fire
         grid = self.points(source, x, y, agg)
         mask = np.isnan(grid) if grid.dtype.kind == "f" else grid == 0
-        interpolator = _normalize_interpolate_how(how)
-        transformed = interpolator(grid, mask)
+        transformed = _normalize_interpolate_how(how)(grid, mask)
         if isinstance(transformed, tuple):
             transformed = transformed[0]
-        if ax is None:
-            ax = plt.gca()
-        kwargs.setdefault("origin", "lower")
-        kwargs.setdefault("interpolation", "nearest")
-        kwargs.setdefault("extent", (*self.x_range, *self.y_range))
-        ax.imshow(transformed, cmap=cmap, **kwargs)
+        img = Image.fromarray(_apply_cmap(transformed, cmap))
         if background:
-            ax.set_facecolor(background)
-        if not axis:
-            ax.set_axis_off()
-        return ax
+            bg = Image.new("RGBA", img.size, background)
+            img = Image.alpha_composite(bg, img)
+        return img
