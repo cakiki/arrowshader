@@ -1,5 +1,6 @@
 import numpy as np
-from arrowshader.backends.acero import Acero
+import pyarrow as pa
+from arrowshader.backends import Acero
 from arrowshader.reductions import count
 from arrowshader.data import to_arrow
 from arrowshader.transfer_functions import _normalize_interpolate_how
@@ -27,11 +28,17 @@ def _apply_cmap(data, cmap):
     a = np.where(np.isnan(data), 0, 255).astype(np.uint8)
     return np.flipud(np.dstack([r, g, b, a]))
 
-
+def _compute_range(source, col, pad=0.02):
+    import pyarrow.compute as pc
+    if isinstance(source, pa.Table):
+        mm = pc.min_max(source[col])
+    else:
+        mm = pc.min_max(source.to_table(columns=[col])[col])
+    mn, mx = mm['min'].as_py(), mm['max'].as_py()
+    pad = (mx - mn) * pad
+    return (mn - pad, mx + pad)
 class Canvas:
-    def __init__(self, width=600, height=600, x_range=None, y_range=None, backend="acero"):
-        if x_range is None or y_range is None:
-            raise ValueError("Please specify x_range and y_range")
+    def __init__(self, width=600, height=600, x_range=None, y_range=None, backend="acero", pad=0.02):
         if isinstance(backend, str):
             if backend not in _BACKENDS:
                 raise ValueError(f"Unknown backend: {backend!r}. Available: {list(_BACKENDS)}")
@@ -42,13 +49,15 @@ class Canvas:
         self.height = height
         self.x_range = x_range
         self.y_range = y_range
+        self.pad = pad
 
-    def points(self, source, x, y, agg=None) -> np.ndarray:
+    def points(self, source, x, y, agg=None):
         if agg is None:
             agg = count()
-        result = self._backend.aggregate(
-            to_arrow(source), x, y, self.width, self.height, self.x_range, self.y_range, agg
-        )
+        arrow_source = to_arrow(source)
+        x_range = self.x_range or _compute_range(arrow_source, x, self.pad)
+        y_range = self.y_range or _compute_range(arrow_source, y, self.pad)
+        result = self._backend.aggregate(arrow_source, x, y, self.width, self.height, x_range, y_range, agg)
         value_col = [c for c in result.column_names if c != "bin_id"][0]
         return _scatter(result, self.width, self.height, value_col)
 
